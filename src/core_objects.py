@@ -35,7 +35,7 @@ class Pipeline(object):
     
     """
     def __init__(self, **kwargs):
-        self.kwargs = kwargs
+        self.kwargs = kwargs 
 
     # <------Base Bonobo ETL Methods------->
     def extract(self):

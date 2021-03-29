@@ -281,11 +281,11 @@ class RedditContentPipeline(Pipeline):
             # Post dict autor dicts:
             author_dicts = {
                 "id": post_id,
-                "author_gold": "NaN",
-                "mod_status": "NaN",
-                "verified_email_status": "NaN",
-                "acc_created_on": "NaN",
-                "comment_karma": "NaN",
+                "author_gold": None,
+                "mod_status": None,
+                "verified_email_status": None,
+                "acc_created_on": None,
+                "comment_karma": None,
                 "author": post_dict["author"].name
             }
 
@@ -310,3 +310,4 @@ class RedditContentPipeline(Pipeline):
         date_str = date_obj.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
 
         return date_str
+        

@@ -13,8 +13,7 @@ setup(
         "pandas", 
         "bonobo",
         "praw",
-        "requests",
-        "apscheduler"
+        "requests"
     ],
     license = 'MIT',
     long_description=open('README.md').read()   
