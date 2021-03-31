@@ -278,7 +278,7 @@ class RedditContentPipeline(Pipeline):
                 "author": post_dict["author"].name
             }
 
-        except:
+        except Exception:
             # Post dict autor dicts:
             author_dicts = {
                 "id": post_id,
