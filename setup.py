@@ -15,7 +15,7 @@ setup(
         "bonobo",
         "praw",
         "requests",
-        "velkozz-pywrapper @ git+https://git@github.com/velkoz-data-ingestion/velkozz_web_api_pywrapper.git#egg=velkozz_pywrapper"
+        "velkozz_pywrapper @ git+https://github.com/velkoz-data-ingestion/velkozz_web_api_pywrapper.git#egg=velkozz_pywrapper"
     ],
     license = 'MIT',
     long_description=open('README.md').read()   
