@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = "velkozz-pipeline-api",
+    name = "velkozz_pipeline_api",
     url = "https://github.com/velkoz-data-ingestion/velkozz_pipeline_api",
     version = "0.1.1",
     author = "Matthew Teelucksingh",
