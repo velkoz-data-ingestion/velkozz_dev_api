@@ -209,6 +209,7 @@ class RedditContentPipeline(Pipeline):
             json=posts_dict)
 
         logger.default_logger(f"Made POST request to Velkoz Web API <{subreddit_endpoint}> w/ Status Code: {response.status_code}")
+        #logger.default_logger(f"\n {response.content}")
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
