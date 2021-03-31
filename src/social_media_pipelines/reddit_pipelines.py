@@ -265,6 +265,7 @@ class RedditContentPipeline(Pipeline):
 
         """                
         # TODO: For Gods sake this is the laziest error-catching I have ever written please make this less horrible:
+        
         try:            
             # Post dict autor dicts:
             author_dicts = {
@@ -286,8 +287,9 @@ class RedditContentPipeline(Pipeline):
                 "verified_email_status": None,
                 "acc_created_on": None,
                 "comment_karma": None,
-                "author": post_dict["author"].name
+                "author": None
             }
+
 
         # Updating the main post_dict with the new author_dict content:
         post_dict.update(author_dicts)
