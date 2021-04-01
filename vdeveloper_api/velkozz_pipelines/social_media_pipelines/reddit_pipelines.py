@@ -6,13 +6,15 @@ from datetime import date, timedelta, datetime
 import pytz
 import requests
 
-# Python API Wrappers:
-import praw
-import velkozz_api.VelkozzAPI  as VelkozzAPI
 
 # Importing internal modules:
-from core_objects import Pipeline
-from utils import logger
+from vdeveloper_api.velkozz_pipelines.core_objects import Pipeline
+from vdeveloper_api.velkozz_pipelines.utils import logger
+
+# Python API Wrappers:
+import praw
+from vdeveloper_api.velkozz_pywrapper.query_api.velkozz_api import VelkozzAPI
+
     
 class RedditContentPipeline(Pipeline):
     """An object that contains all the logic and methods necessary to construct a 
