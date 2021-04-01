@@ -8,7 +8,7 @@ import requests
 
 # Python API Wrappers:
 import praw
-import query_api.velkozz_api.VelkozzAPI  as VelkozzAPI
+import velkozz_api.VelkozzAPI  as VelkozzAPI
 
 # Importing internal modules:
 from core_objects import Pipeline
