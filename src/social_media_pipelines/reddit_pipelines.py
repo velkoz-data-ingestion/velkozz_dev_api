@@ -8,7 +8,7 @@ import requests
 
 # Python API Wrappers:
 import praw
-import velkozz_external_api
+import src
 
 # Importing internal modules:
 from core_objects import Pipeline
