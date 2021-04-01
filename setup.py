@@ -1,21 +1,19 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 setup(
-    name = "velkozz_pipeline_api",
+    name = "velkozz-developer-api",
     url = "https://github.com/velkoz-data-ingestion/velkozz_pipeline_api",
-    version = "0.1.1",
+    version = "0.1.2",
     author = "Matthew Teelucksingh",
-    packages = find_packages(
-        where = "src",
-        include = ["social_media_pipelines", "*pipelines", "core_objects", "utils"]
+    packages = find_namespace_packages(
+        include = ["vdeveloper_api.*"]
     ),
-    package_dir = {"" : "src"},
+    package_dir = {"" : "vdeveloper_api"},
     install_requires = [
         "pandas", 
         "bonobo",
         "praw",
-        "requests",
-        "velkozz_pywrapper @ git+https://github.com/velkoz-data-ingestion/velkozz_web_api_pywrapper.git#egg=velkozz_pywrapper"
+        "requests"
     ],
     license = 'MIT',
     long_description=open('README.md').read()   
