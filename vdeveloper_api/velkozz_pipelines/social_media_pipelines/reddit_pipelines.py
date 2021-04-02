@@ -55,8 +55,11 @@ class RedditContentPipeline(Pipeline):
         client_secret = kwargs["CLIENT_SECRET"] if "CLIENT_SECRET" in kwargs else os.environ["CLIENT_SECRET"]
         user_agent = kwargs["USER_AGENT"] if "USER_AGENT" in kwargs else  os.environ["USER_AGENT"]
 
+        # Velkozz Web API Configs:
+        web_api_url = kwargs["VELKOZZ_API_URL"] if "VELKOZZ_API_URL" in kwargs else os.environ['VELKOZZ_API_URL']
+
         # Creating connection to the Velkozz Web API via Query API wrapper:
-        self.query_con = VelkozzAPI(token=self.token)
+        self.query_con = VelkozzAPI(token=self.token, url=web_api_url)
 
         # Creating a reddit praw instance based on specified subreddit:
         self.reddit = praw.Reddit(
