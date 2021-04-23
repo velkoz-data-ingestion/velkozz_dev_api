@@ -4,8 +4,8 @@ import requests
 
 class VelkozzAPI(object):
     """A python object representing a connection to the Velkozz Web API.  
-    """
 
+    """
     def __init__(self, **kwargs):
         
         # Core Web API Configuration: TODO: Replace with config dict/env var.
@@ -113,7 +113,4 @@ class VelkozzAPI(object):
             return token_response.json()["token"] 
 
         else:
-            raise ValueError("No Account auth provided to interact with web api. Check config params")
-
-                    
-
+            raise ValueError("No Account auth provided to interact with web api. Check config params") 
