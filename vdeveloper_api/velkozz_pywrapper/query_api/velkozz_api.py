@@ -13,6 +13,7 @@ class VelkozzAPI(object):
         # Creating url routes for core endpoints:
         self.token_endpoint = f"{self.base_url}/api-token-auth/" 
         self.reddit_endpoint = f"{self.base_url}/social_media_api/reddit"
+        self.finance_endpoint = f"{self.base_url}/finance_api"
 
         # Extracting necessary params from kwargs: 
         self.username = kwargs.get("username", None)
@@ -92,6 +93,35 @@ class VelkozzAPI(object):
 
         else:
             raise ValueError(f"Request to subreddit {subreddit} api failed with status code {response.status_code}")
+
+    def get_index_comp_data(self, market_index):
+        """Method queries the velkozz api for market index composition.
+
+        The method formats the API JSON response into a pandas dataframe.
+
+        Args:
+            market_index (str): The shortened name of the market being queried.
+                eg: spy, djia, nyse.
+
+        Returns:
+            pd.DataFrame: The dataframe containing all of the formatted market index
+                composition.
+
+        """
+        # Building api endpoint:
+        market_index_endpoint = f"{self.finance_endpoint}/market_index/{market_index}comp"
+        
+        # Making request to the API JSON data:
+        response = requests.get(market_index_endpoint, headers=self.auth_header)
+
+        # Extracting response content in JSON format:
+        if response.status_code < 302:
+            raw_json = response.json()
+
+            # Converting JSON data to pandas dataframe:
+            index_comp_df = pd.DataFrame.from_dict(raw_json, orient='columns')
+            index_comp_df.drop(['url'], axis=1, inplace=True)
+            print(index_comp_df)
 
     def _get_user_token(self):
         """Method makes a POST request to the velkozz authentication
