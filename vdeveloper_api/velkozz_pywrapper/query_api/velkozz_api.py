@@ -121,7 +121,11 @@ class VelkozzAPI(object):
             # Converting JSON data to pandas dataframe:
             index_comp_df = pd.DataFrame.from_dict(raw_json, orient='columns')
             index_comp_df.drop(['url'], axis=1, inplace=True)
-            print(index_comp_df)
+            
+            return index_comp_df
+        
+        else:
+            pass
 
     def _get_user_token(self):
         """Method makes a POST request to the velkozz authentication
