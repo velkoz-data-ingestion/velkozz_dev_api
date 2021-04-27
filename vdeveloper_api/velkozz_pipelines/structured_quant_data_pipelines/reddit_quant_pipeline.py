@@ -76,11 +76,11 @@ class WSBTickerFrequencyPipeline(Pipeline):
         nasdaq_comp = args[2]
 
         # Extracting the ticker lists from the market composition indicies:
-        nyse_tickers = nyse_comp["symbol"].values
-        nasdaq_tickers = nasdaq_comp["symbol"].values
+        nyse_tickers = nyse_comp["symbol"].values.tolist()
+        nasdaq_tickers = nasdaq_comp["symbol"].values.tolist()
 
         # Performing ticker frequency count extraction from wsb_posts:
-        ticker_freq_count = build_wsb_ticker_freq(wsb_posts, [nyse_comp, nasdaq_comp])
+        ticker_freq_count = build_wsb_ticker_freq(wsb_posts, [nyse_tickers, nasdaq_tickers])
         print(ticker_freq_count)
 
     def load(self, *args):
