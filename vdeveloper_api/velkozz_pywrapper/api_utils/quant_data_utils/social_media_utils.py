@@ -1,3 +1,5 @@
+import pandas as pd
+
 # Wallstreet Bets Ticker Count Frequency Method:
 def build_wsb_ticker_freq(wsb_posts_df, *args):
     """Method converts structured timeseries data about wallstreetbets
@@ -23,7 +25,7 @@ def build_wsb_ticker_freq(wsb_posts_df, *args):
             about r/wsb posts. 
             
         args (list): Method expects a list of ticker symbol lists. 
-            
+             
     Returns: 
         dict: The dictionary containing ticker frequency counts.
     """
