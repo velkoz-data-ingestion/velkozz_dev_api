@@ -1,4 +1,5 @@
 import pandas as pd
+import itertools
 
 # Wallstreet Bets Ticker Count Frequency Method:
 def build_wsb_ticker_freq(wsb_posts_df, *args):
