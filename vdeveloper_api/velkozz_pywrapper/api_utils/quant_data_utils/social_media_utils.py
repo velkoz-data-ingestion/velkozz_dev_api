@@ -1,6 +1,6 @@
 import pandas as pd
 import itertools
-import datetime
+from datetime import datetime
 
 # Wallstreet Bets Ticker Count Frequency Method:
 def build_wsb_ticker_freq(wsb_posts_df, *args):
