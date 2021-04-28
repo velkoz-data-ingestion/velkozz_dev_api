@@ -5,7 +5,7 @@ import os
 from datetime import date, timedelta, datetime
 import pytz
 import requests
-
+import json
 
 # Importing internal modules:
 from vdeveloper_api.velkozz_pipelines.core_objects import Pipeline
@@ -49,16 +49,34 @@ class WSBTickerFrequencyPipeline(Pipeline):
 
     def extract(self):
         """
-        - Query the existing ticker frequencies posts.
-        - Query the API for a list of wsb posts. 
-        - Query the API for market index composition data.
+        The method queries the velkoz web api for the following datasets:
+
+        - The existing wsb ticker freauency count dataset.
+        - The r/wallstreetbets posts dataset
+        - The NYSE and NASDAQ market index datasets
+
+        The method uses the existing wsb ticker frequency count dataset to
+        narrow down which wallstreetbets posts to query from the API.
+
+        Yields:
+            tuple: Containing all three of the dataframes queried from the
+                REST API.
         """
         # Querying the existing wsb frequency counts:
-        # TODO: Add logic to extract most recent wsb frequency count:
-        recent_wsb_freq = None
+        try:
+            recent_wsb_freq = self.velkozz_con.get_wsb_ticker_counts().index[-1]
+        except:
+            recent_wsb_freq = None 
 
-        # Querying wallstreetbets posts from API:
-        wsb_posts = self.velkozz_con.get_subreddit_data("wallstreetbets")
+        logger.default_logger(f"API Queried, Most Recent Frequency Counts {recent_wsb_freq}")
+
+        # If the most recent datetime was extracte, filter wsb posts by date:
+        if recent_wsb_freq is not None:
+            wsb_posts = self.velkozz_con.get_subreddit_data("wallstreetbets", start_date=recent_wsb_freq)
+        
+        # Else querying the entire wsb dataset:
+        else:
+            wsb_posts = self.velkozz_con.get_subreddit_data("wallstreetbets")
 
         # Querying the market index composition data:
         nyse_comp = self.velkozz_con.get_index_comp_data("nyse")
@@ -67,8 +85,27 @@ class WSBTickerFrequencyPipeline(Pipeline):
         yield (wsb_posts, nyse_comp, nasdaq_comp)
 
     def transform(self, *args):
-        """
-        - Apply the build_wsb_ticker_freq function to the data.
+        """The method applies the main transformation to the wsb post datasets.
+        
+        The method applies the build_wsb_ticker_freq method to the wsb_posts dataframe
+        pasted from the extraction method. This converts the dataframe of wallstreetbets
+        posts to a dictionary of dates and frequency counts. This process is fully described
+        in the documentation of the build_wsb_ticker_freq.
+
+        The method converts the output from the build_freq_dicts method into a format that is 
+        expected by the REST API:
+
+        {date:{freq_dict}, date:{freq_dict}, date:{freq_dict}} is converted to
+        
+        [
+            {'day':'yyyy-mm-dd', 'freq_counts': '{ticker frequencies}'},
+            {'day':'yyyy-mm-dd', 'freq_counts': '{ticker frequencies}'},
+            {'day':'yyyy-mm-dd', 'freq_counts': '{ticker frequencies}'}
+        ]
+
+
+        Yield:
+            dict: A dictionary of dates and ticker frequency counts.
         """
         # Unpacking the argument tuples:
         wsb_posts = args[0]
@@ -80,13 +117,34 @@ class WSBTickerFrequencyPipeline(Pipeline):
         nasdaq_tickers = nasdaq_comp["symbol"].values.tolist()
 
         # Performing ticker frequency count extraction from wsb_posts:
-        ticker_freq_count = build_wsb_ticker_freq(wsb_posts, [nyse_tickers, nasdaq_tickers])
-        print(ticker_freq_count)
+        ticker_freq_count = build_wsb_ticker_freq(wsb_posts, nyse_tickers, nasdaq_tickers)
+        
+        # Converting the data into a format expected by the REST API:
+        formatted_freq_dicts = [
+            {"day": date, "freq_counts":freq_count} 
+            for date, freq_count in ticker_freq_count.items()
+        ]  
+
+        yield formatted_freq_dicts
 
     def load(self, *args):
-        """
-        - Seralize the data to JSON format and make POST request to the Web API.
-        """
-        pass
+        """The method seralizes the dictionary of dates and ticker freqency counts into a
+        JSON format and makes a POST request to the velkozz web api. 
 
-WSBTickerFrequencyPipeline(token="21128e1acfba7afb5656d30dbd24ebd892aa2049", url="http://localhost:8001")
+        """
+        # Constructing the endpoint for ticker frequency counts:
+        ticker_counts_endpoints = f"{self.velkozz_con.finance_endpoint}/structured_quant/wsb_ticker_mentions/"
+
+        # Unpacking argument tuples:
+        formatted_freq_dicts = args[0]
+        
+        # Making POST request to the REST API:
+        response = requests.post(
+            ticker_counts_endpoints,
+            headers={"Authorization": f"Token {self.token}"},
+            json=formatted_freq_dicts
+        )
+
+        logger.default_logger(f"Made POST request to Velkoz Web API wsb Ticker Frequency Counts of length {len(formatted_freq_dicts)} with response {response.status_code}")
+
+

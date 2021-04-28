@@ -1,6 +1,10 @@
 # Importing external packages:
 import pandas as pd
 import requests
+import collections
+import json
+import ast
+import itertools
 
 class VelkozzAPI(object):
     """A python object representing a connection to the Velkozz Web API.  
@@ -29,6 +33,7 @@ class VelkozzAPI(object):
 
         # TODO: Once API that return remaining requests/access status is written include that.
 
+    # Social Media Query Methods:
     def get_subreddit_data(self, subreddit_name, start_date=None, end_date=None):
         """Method queries the velkozz api for posts in a given subreddit according
         to the specified start and end dates. 
@@ -94,6 +99,7 @@ class VelkozzAPI(object):
         else:
             raise ValueError(f"Request to subreddit {subreddit} api failed with status code {response.status_code}")
 
+    # Finance Data Query Methods:
     def get_index_comp_data(self, market_index):
         """Method queries the velkozz api for market index composition.
 
@@ -127,6 +133,72 @@ class VelkozzAPI(object):
         else:
             pass
 
+    # Strucutred Finance Quant Data Query Methods:
+    def get_wsb_ticker_counts(self, start_date=None, end_date=None):
+        """Method queries the velkozz api for the frequency counts of ticker mentions
+        from the wallstreetbets subreddit.
+
+        It performs a GET request to receive the frequency count data from the REST API and
+        converts the JSON data to a structured timeseries dataframe.
+
+        JSON data format: {
+            "day": "2021-03-23",
+            "ticker_count": "{'FUBO': 1, 'AM': 1, 'UWMC': 1, 'FOR': 2, 'TX': 1, 'GME': 31}
+            }
+
+        Formatted DataFrame Format:
+
+        +------------------+--------+------+------+-------+-----+-----+
+        |       Date       |  FUBO  |  AM  | UWMC |  FOR  | TX  | GME |
+        +------------------+--------+------+------+-------+-----+-----+
+        | Datetime (index) |   int  |  int |  int |  int  | int | int |
+        +------------------+--------+------+------+-------+-----+-----+
+
+        Args:
+            start_date (str|None, optional): The day that will serve as the start of
+                the dataset. 
+
+            end_date (str|None, optional):  The day that will serve as the end of the
+                dataset.
+
+        Returns:
+            pd.DataFrame: The dataframe containing all of the ticker frequency counts.
+
+        """
+        # Building api endpoints:
+        wsb_ticker_counts_endpoint = f"{self.finance_endpoint}/structured_quant/wsb_ticker_mentions"
+
+        # Making the request to the REST API:
+        response = requests.get(wsb_ticker_counts_endpoint, headers=self.auth_header)
+
+        # Extracting response content in JSON format:
+        if response.status_code < 302:
+            raw_json = response.json()
+
+            # Create a list of all unique ticker symbols present in dataset:
+            unique_tickers_lst = []
+            date_index = []
+
+            for ticker_freq_dict in raw_json:
+                unique_tickers_lst.append(ast.literal_eval(ticker_freq_dict["ticker_count"]).keys())
+                date_index.append(ticker_freq_dict['day'])
+
+            # Flattening list of dict keys into a list of ticker symbols:
+            unique_tickers_lst = set(itertools.chain(*unique_tickers_lst))
+
+            # Building the ticker mentions DataFrame:
+            wsb_ticker_freq_df = pd.DataFrame(index=date_index, columns=unique_tickers_lst)
+
+            # Populating dataframe with data O(n^3):
+            for frequency_dict in raw_json:
+                for key, value in ast.literal_eval(frequency_dict["ticker_count"]).items():
+                    wsb_ticker_freq_df.loc[frequency_dict["day"]][key] = value
+
+            wsb_ticker_freq_df.fillna(0, inplace=True)
+
+            return wsb_ticker_freq_df
+
+
     def _get_user_token(self):
         """Method makes a POST request to the velkozz authentication
         endpoint to extract an auth token for the user if the user
@@ -148,3 +220,4 @@ class VelkozzAPI(object):
 
         else:
             raise ValueError("No Account auth provided to interact with web api. Check config params") 
+
