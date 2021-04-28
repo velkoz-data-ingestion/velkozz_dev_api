@@ -146,5 +146,3 @@ class WSBTickerFrequencyPipeline(Pipeline):
         )
 
         logger.default_logger(f"Made POST request to Velkoz Web API wsb Ticker Frequency Counts of length {len(formatted_freq_dicts)} with response {response.status_code}")
-
-
