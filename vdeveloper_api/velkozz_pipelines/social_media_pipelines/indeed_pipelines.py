@@ -214,7 +214,10 @@ class IndeedJobListingsPipeline(Pipeline):
             for listing_card in listings]
         
         # Extracting and Building the url to the next indeed webpage:
-        next_page_href = soup.find("a", {"aria-label":"Next"})['href']
+        try:
+            next_page_href = soup.find("a", {"aria-label":"Next"})['href']
+        except Exception:
+            next_page_href = None
         next_link_page = f"https://ca.indeed.com{next_page_href}"
 
         return [jobs, next_link_page]
@@ -249,6 +252,10 @@ class IndeedJobListingsPipeline(Pipeline):
             # Adding job listings data to the list:
             job_listings.extend(indeed_data[0])
             
+            # Second Exit Condition if no next url is found:
+            if indeed_data[1] is None: 
+                return job_listings
+
             # Waiting time to avoid throttling:
             time.sleep(5)
 
