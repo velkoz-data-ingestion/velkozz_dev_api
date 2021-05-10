@@ -17,6 +17,7 @@ class VelkozzAPI(object):
         # Creating url routes for core endpoints:
         self.token_endpoint = f"{self.base_url}/api-token-auth/" 
         self.reddit_endpoint = f"{self.base_url}/social_media_api/reddit"
+        self.jobs_endpoint = f"{self.base_url}/social_media_api/jobs"
         self.finance_endpoint = f"{self.base_url}/finance_api"
 
         # Extracting necessary params from kwargs: 
@@ -86,7 +87,7 @@ class VelkozzAPI(object):
                 )
         
         # Converting the json response to formatted dataframe:
-        if response.status_code < 302:
+        if response.status_code <= 302:
             raw_json = response.json()
 
             # Converting the JSON resposne to pandas dataframe:
@@ -98,6 +99,64 @@ class VelkozzAPI(object):
 
         else:
             raise ValueError(f"Request to subreddit {subreddit} api failed with status code {response.status_code}")
+    
+    def get_indeed_job_listings(self, start_date=None, end_date=None):
+        """The method queries the velkozz api for all of the job postings from 
+            the indeed job posts database. 
+            
+            It transforms the JSON response from the REST API into a formatted
+            pandas dataframe.
+
+            start_date (str|None, optional): The day that will serve as the start of
+                the dataset. 
+
+            end_date (str|None, optional):  The day that will serve as the end of the
+                dataset.
+        
+            Returns:
+                pd.DataFrame: The dataframe containing all of the formatted indeed listings data.
+
+        """
+        # Building indeed.com endpoint:
+        indeed_jobs_endpoint = f"{self.jobs_endpoint}/indeed/listings/"
+
+        # Conditionals dealing with the start and end data params:
+        if start_date is None and end_date is None:
+            response = requests.get(indeed_jobs_endpoint, headers=self.auth_header)
+
+        # TODO: Replace with new python switches?        
+        else:
+            if end_date is None:
+                response = requests.get(
+                    indeed_jobs_endpoint, 
+                    headers=self.auth_header,
+                    params={"Start-Date":start_date}
+                )
+
+            if start_date is None:
+                response = requests.get(
+                    indeed_jobs_endpoint, 
+                    headers=self.auth_header,
+                    params={"End-Date":end_date}
+                )
+
+            if start_date and end_date is not None:
+                response = requests.get(
+                    indeed_jobs_endpoint, 
+                    headers=self.auth_header,
+                    params={"Start-Date":start_date,"End-Date":end_date}
+                )
+
+        # Extracting JSON response and converting to pandas dataframe:
+        if response.status_code <= 302:
+            raw_json = response.json()
+
+            # JSON -> DataFrame:
+            indeed_jobs_df = pd.DataFrame.from_dict(raw_json, orient="columns")
+            indeed_jobs_df.set_index("id", inplace=True)
+            indeed_jobs_df.drop(["url"], axis=1, inplace=True)
+
+            return indeed_jobs_df
 
     # Finance Data Query Methods:
     def get_index_comp_data(self, market_index):
@@ -198,7 +257,6 @@ class VelkozzAPI(object):
 
             return wsb_ticker_freq_df
 
-
     def _get_user_token(self):
         """Method makes a POST request to the velkozz authentication
         endpoint to extract an auth token for the user if the user
@@ -220,4 +278,3 @@ class VelkozzAPI(object):
 
         else:
             raise ValueError("No Account auth provided to interact with web api. Check config params") 
-
