@@ -53,6 +53,10 @@ class IndeedJobListingsPipeline(Pipeline):
         # API Endpoint for Indeed Job Postings:
         self.velkozz_indeed_endpoint = f"{self.query_con.jobs_endpoint}/indeed/listings/"
 
+        # Execuring all of the ETL functions mapped in the graph:
+        self.execute_pipeline()
+
+
     def recursively_extract_and_transform_listings(self):
         """
         - Inital Indeed URL, built based on search params.
@@ -69,6 +73,8 @@ class IndeedJobListingsPipeline(Pipeline):
         # Using recursive method to extract data via built url:
         job_listings = self._extract_indeed_jobs(url_req.url, 0, self.max_pages)
         
+        logger.default_logger(f"Extracted {len(job_listings)} from Indeed.ca, scraping {self.max_pages} Pages")
+
         yield job_listings
         
     def load_listings_to_api(self, *args):
@@ -91,8 +97,27 @@ class IndeedJobListingsPipeline(Pipeline):
 
         logger.default_logger(f"Made POST request to Velkoz Web API <Indeed Jobs Listings: Length {len(job_listings)}> w/ Status Code: {response.status_code}")
 
-        
+    def build_graph(self, **options):
+        """The method that is used to construct a Bonobo ETL pipeline
+        DAG that schedules the following ETL methods:
 
+        - Extraction/Transformation: recursively_extract_and_transform_listings
+        - Loading: load_listings_to_api
+
+        Returns: 
+            bonobo.Graph: The Bonobo Graph that is declared as an instance
+                parameter and that will be executed by the self.execute_pipeline method.
+        
+        """
+        # Building the Graph:
+        self.graph = bonobo.Graph()    
+
+        # Creating the main method chain for the graph:
+        self.graph.add_chain(
+            self.recursively_extract_and_transform_listings,
+            self.load_listings_to_api)
+            
+        return self.graph
 
     def _get_post_date(self, date_str):
         """The method takes the text extracted from indeed.com's <span: 'date'>
@@ -229,14 +254,3 @@ class IndeedJobListingsPipeline(Pipeline):
 
             # Recursivley calling function:
             return self._extract_indeed_jobs(indeed_data[1], page_num+1, max_pages, job_listings)
-
-
-test = IndeedJobListingsPipeline(
-    "software developer",
-    "Ontario",
-    2,
-    token="21128e1acfba7afb5656d30dbd24ebd892aa2049",
-    VELKOZZ_API_URL = "http://localhost:8001"
-    )
-
-test.recursively_extract_and_transform_listings()
