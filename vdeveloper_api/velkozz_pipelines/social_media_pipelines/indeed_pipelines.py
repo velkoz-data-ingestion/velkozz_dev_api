@@ -257,7 +257,7 @@ class IndeedJobListingsPipeline(Pipeline):
                 return job_listings
 
             # Waiting time to avoid throttling:
-            time.sleep(5)
+            time.sleep(10)
 
             # Recursivley calling function:
             return self._extract_indeed_jobs(indeed_data[1], page_num+1, max_pages, job_listings)
