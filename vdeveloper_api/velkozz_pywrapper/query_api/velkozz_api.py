@@ -100,7 +100,7 @@ class VelkozzAPI(object):
         else:
             raise ValueError(f"Request to subreddit {subreddit} api failed with status code {response.status_code}")
     
-    def get_indeed_job_listings(self, start_date=None, end_date=None):
+    def get_indeed_job_listings(self, job_type=None, location=None, company=None, start_date=None, end_date=None):
         """The method queries the velkozz api for all of the job postings from 
             the indeed job posts database. 
             
@@ -112,6 +112,15 @@ class VelkozzAPI(object):
 
             end_date (str|None, optional):  The day that will serve as the end of the
                 dataset.
+
+            location (str|None, optional): The location of the job listings that are 
+                queried from the api.
+
+            job_type (str|None, optional): The search string that dictates the type of job
+                listings that are queried from the api.
+
+            company (str|None, optional): The search string that filter the companies being
+                queried from the api.
         
             Returns:
                 pd.DataFrame: The dataframe containing all of the formatted indeed listings data.
@@ -122,30 +131,33 @@ class VelkozzAPI(object):
 
         # Conditionals dealing with the start and end data params:
         if start_date is None and end_date is None:
-            response = requests.get(indeed_jobs_endpoint, headers=self.auth_header)
+            payload = {}
 
         # TODO: Replace with new python switches?        
         else:
             if end_date is None:
-                response = requests.get(
-                    indeed_jobs_endpoint, 
-                    headers=self.auth_header,
-                    params={"Start-Date":start_date}
-                )
+                payload = {"Start-Date":start_date}
 
             if start_date is None:
-                response = requests.get(
-                    indeed_jobs_endpoint, 
-                    headers=self.auth_header,
-                    params={"End-Date":end_date}
-                )
+                payload = {"End-Date":end_date}
 
             if start_date and end_date is not None:
-                response = requests.get(
-                    indeed_jobs_endpoint, 
-                    headers=self.auth_header,
-                    params={"Start-Date":start_date,"End-Date":end_date}
-                )
+                payload = {"Start-Date":start_date,"End-Date":end_date}
+
+        # Conditionals searching for job listings types:
+        if job_type is not None:
+            payload["job"] = job_type
+
+        # Conditionals for locations:
+        if location is not None:
+            payload["location"] = location
+
+        # Conditionals for company:
+        if company is not None:
+            payload["company"] = company
+
+        # Making GET request to the velkozz api once the query params have been built:
+        response = requests.get(indeed_jobs_endpoint, headers=self.auth_header, params=payload)
 
         # Extracting JSON response and converting to pandas dataframe:
         if response.status_code <= 302:

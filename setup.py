@@ -12,7 +12,9 @@ setup(
         "pandas", 
         "bonobo",
         "praw",
-        "requests"
+        "requests",
+        "beautifulsoup4",
+        "pytz"
     ],
     license = 'MIT',
     long_description=open('README.md').read()   
