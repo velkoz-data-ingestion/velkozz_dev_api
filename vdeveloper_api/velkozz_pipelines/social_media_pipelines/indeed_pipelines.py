@@ -236,9 +236,9 @@ class IndeedJobListingsPipeline(Pipeline):
         recursivley continues for an arbitrary amount of time determined
         by an input param.
         
-        Args:
+        Args: 
         
-        Returns:
+        Returns: list
 
         """
         if page_num > max_pages:
