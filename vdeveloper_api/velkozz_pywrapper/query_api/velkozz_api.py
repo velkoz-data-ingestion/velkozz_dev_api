@@ -294,11 +294,11 @@ class VelkozzAPI(object):
 
         The dataframe that is built is in the following format:
 
-        +--------------------------------------------------------------------------------------------------+
-        | title | published  | authors | content | meta_keywords | nlp_keywords | url | source | timestamp |
-        +-------+------------+---------+---------+---------------+--------------+-----+--------+-----------+
-        |  str  |  datetime  |   list  |   srt   |      list     |     list     | str |   str  |  datetime |
-        +-------+------------+---------+---------+---------------+--------------+-----+--------+-----------+
+        +----------------------------------------------------------------------------------------------------------+
+        | title | published  | authors | content | meta_keywords | nlp_keywords | article_url | source | timestamp |
+        +-------+------------+---------+---------+---------------+--------------+-------------+--------+-----------+
+        |  str  |  datetime  |   list  |   srt   |      list     |     list     |     str     |   str  |  datetime |
+        +-------+------------+---------+---------+---------------+--------------+-------------+--------+-----------+
 
         Args:
             start_date (str|None, optional): The day that will serve as the start of

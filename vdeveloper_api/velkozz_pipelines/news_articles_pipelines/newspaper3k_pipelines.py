@@ -102,13 +102,13 @@ class NewsArticlesPipeline(Pipeline):
                 article_features = {
                         "title": article.title,
                         "authors": article.authors,
-                        "published_date": article.publish_date,
+                        "published_date": str(article.publish_date),
                         "article_text": article.text,
                         "meta_keywords": article.meta_keywords,
                         "nlp_keywords": article.keywords,
-                        "url": article.url,
+                        "article_url": article.url,
                         "source": source_name,
-                        "timestamp": datetime.now()
+                        "timestamp": str(datetime.now())
                 }
                 articles.append(article_features)
 
