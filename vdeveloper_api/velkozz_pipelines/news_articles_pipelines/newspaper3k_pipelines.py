@@ -2,7 +2,7 @@
 import pandas as pd
 import bonobo
 import os
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta, datetime, time
 import pytz
 import requests
 import bs4
@@ -42,7 +42,7 @@ class NewsArticlesPipeline(Pipeline):
 
         # Creating Velkozz API Connection & API endpoint:
         self.query_con = VelkozzAPI(token=self.token, url=web_api_url)
-        self.velkozz_news_endpoint = f"{self.query_con.news_endpoint}/news_articles"
+        self.velkozz_news_endpoint = f'{self.query_con.news_endpoint}/news_articles/'
 
         self.execute_pipeline()
 
@@ -60,14 +60,14 @@ class NewsArticlesPipeline(Pipeline):
 
         """        
         # Extracting all of the news urls from the config file:
-        news_urls = self.config_params["NewsSites"][1:4]
+        news_urls = self.config_params["NewsSites"]
         
         # Building newspaper Source objects from each news url:
         built_news_source =[
             self.__create_source_obj(source_dict) for source_dict in news_urls]
         
         # Creating Pools for multi-threading download:
-        news_pool.set(built_news_source, threads_per_source=2)
+        news_pool.set(built_news_source, threads_per_source=4)
         news_pool.join()
         
         for source in built_news_source:
@@ -101,14 +101,14 @@ class NewsArticlesPipeline(Pipeline):
 
                 article_features = {
                         "title": article.title,
-                        "authors": article.authors,
-                        "published_date": str(article.publish_date),
+                        "authors": str(article.authors),
+                        "published_date": self.__process_datetime_obj(article.publish_date),
                         "article_text": article.text,
-                        "meta_keywords": article.meta_keywords,
-                        "nlp_keywords": article.keywords,
+                        "meta_keywords": str(article.meta_keywords),
+                        "nlp_keywords": str(article.keywords),
                         "article_url": article.url,
                         "source": source_name,
-                        "timestamp": str(datetime.now())
+                        "timestamp": str(datetime.now())    
                 }
                 articles.append(article_features)
 
@@ -141,6 +141,11 @@ class NewsArticlesPipeline(Pipeline):
             json=articles_data)
         
         logger.default_logger(f"Made POST request to Velkoz Web API <News Articles: Length {len(articles_data)}> w/ Status Code: {response.status_code}")
+        logger.default_logger(f"{response.text}")
+
+        # Sleeping to avoid overloading the REST API (this is an issue with the multi-threading download):
+        time.sleep(10)
+
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
@@ -187,7 +192,30 @@ class NewsArticlesPipeline(Pipeline):
         newspaper.build()
         
         return newspaper
- 
-test = NewsArticlesPipeline(
-    NEWS_SITE_CONFIG_PATH="/Users/matthewteelucksingh/Projects/test_repos/velkozz_news_api/example_config.yaml"
-)
+    
+    def __process_datetime_obj(self, datetime_obj):
+        """The method is a basic way to process datetime objects.
+
+        The method either returns a None type if there is no datetime
+        object. If the method is not None it formats the datetime object 
+        into the correct format for the REST API: YYYY-MM-DD and returns
+        that datetime object. 
+
+        It is meant to serve as a basic way to format datetime objects that
+        are extracted via the newspaper3k.Article() pipeline.
+        
+        Args:
+            datetime_obj (None | datetime): The value passed into the method
+                as the datetime to be formatted.
+
+        Return:
+            str|None: Either the formatted datetime object in the form of a string
+                or if no datetime is provided.
+
+        """
+        if datetime_obj is None:
+            return None
+
+        else:
+            return datetime_obj.strftime("%Y-%m-%d")
+
