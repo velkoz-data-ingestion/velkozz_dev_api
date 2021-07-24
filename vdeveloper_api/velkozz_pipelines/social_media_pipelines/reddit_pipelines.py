@@ -5,7 +5,7 @@ import os
 from datetime import date, timedelta, datetime
 import pytz
 import requests
-
+import logging
 
 # Importing internal modules:
 from vdeveloper_api.velkozz_pipelines.core_objects import Pipeline
@@ -70,7 +70,7 @@ class RedditContentPipeline(Pipeline):
 
         self.subreddit = self.reddit.subreddit(self.subreddit_name)
 
-        logger.default_logger(f"Reddit Instance Initalized with Read Status:{self.reddit.read_only}")
+        self.logger.info(f"Reddit Instance Initalized with Read Status: {self.reddit.read_only}", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
         # Execuring all of the ETL functions mapped in the graph:
         self.execute_pipeline()
@@ -117,6 +117,8 @@ class RedditContentPipeline(Pipeline):
 
             posts_dict[post.id] = post_content_dict
 
+        self.logger.info(f"Extracted Daily top {len(post_content_dict.keys())} posts from {self.subreddit}", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+
         yield posts_dict
 
     def transform_posts(self, *args):
@@ -137,6 +139,8 @@ class RedditContentPipeline(Pipeline):
         When converting a dictionary to a unique elements Dataframe the method unpacks
         the information and converts all data to the correct data types. 
                 
+        TODO: Remove Web API Querying, deal with that on the back end.
+
         Yields:
             List: A list of dictionaires where each dict is a unique subreddit post.
 
@@ -144,6 +148,9 @@ class RedditContentPipeline(Pipeline):
         # Unpacking Args Tuple:
         posts_dict = args[0]
         
+
+        # Remove for next version:
+        """
         # Querying existing posts from the database during current day:
         start_date = date.today() - timedelta(days=1) # Today's date range for API.
         end_date = start_date + timedelta(days=2)
@@ -173,6 +180,14 @@ class RedditContentPipeline(Pipeline):
             in posts_dict.items() if post_id in unique_id_keys
             
         ]
+        """
+
+        # Transforming post data external of unique post ID filtering:
+        unique_posts = [
+            self._transform_post_content_lst(post_id, post_dict) for post_id, content_lst in
+            post_dict.items()]
+
+        self.logger.warning(f"Raw Post Data Transformed. Formatted posts ({len(unique_posts)}) data being passed to Loading method", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
         yield unique_posts
 
@@ -201,8 +216,11 @@ class RedditContentPipeline(Pipeline):
 
         # If the list of posts contains no entries end w/o making POST request:
         if len(posts_dict) < 1:
-            logger.default_logger(f"{len(posts_dict)} Unique posts found for daily top {self.subreddit_name}. Exiting w/o making POST request.")
+            self.logger.warning(f"Only {len(posts_dict)} posts found. Existing w/o making a POST request to the API", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
             return
+        
+        else:
+            self.logger.warning(f"Writing {len(posts_dict)} posts to the Web API", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
         # Building the API endpoint for the specific subreddit:
         subreddit_endpoint = f"{self.query_con.reddit_endpoint}/r{self.subreddit_name}/"
@@ -213,8 +231,11 @@ class RedditContentPipeline(Pipeline):
             headers={"Authorization":f"Token {self.token}"},
             json=posts_dict)
 
-        logger.default_logger(f"Made POST request to Velkoz Web API <{subreddit_endpoint}> w/ Status Code: {response.status_code}")
-        #logger.default_logger(f"\n {response.content}")
+        if response.status_code > 300:
+            self.logger.warning(f"POST Request of {len(posts_dict)} reddit posts failed w/ Status Code {response.status_code}", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            
+        else:
+            self.logger.info(f"Made POST request to Velkozz REST API {subreddit_endpoint} with Status Code {response.status_code}", "reddit", "pipeline", datetime.datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline

@@ -2,6 +2,9 @@
 import requests
 import bonobo
 
+# Importing Logging packages:
+import logging
+from logging.handlers import HTTPHandler
 
 class VelkozzAPI(object):
 
@@ -36,6 +39,20 @@ class Pipeline(object):
     """
     def __init__(self, **kwargs):
         self.kwargs = kwargs 
+
+        # Attempting to extract the config params for the logger: 
+        self.logger_host = self.kwargs["LOGGER_HOST"] if "LOGGER_HOST" in self.kwargs else os.environ["LOGGER_HOST"]
+        self.logger_url = self.kwargs["LOGGER_URL"] if "LOGGER_URL" in self.kwargs else os.environ["LOGGER_URL"]
+
+        # Creating a log event handler and a logger object:
+        self.logger = logging.getLogger("Velkozz Pipeline Logger")
+        self.logger.setLevel(logging.DEBUG)
+        
+        self.http_handler = HTTPHandler(self.logger_host, self.logger_url, method="POST")
+        self.formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        self.http_handler.setFormatter(self.formatter)
+        self.logger.addHandler(self.http_handler)
 
     # <------Base Bonobo ETL Methods------->
     def extract(self):
