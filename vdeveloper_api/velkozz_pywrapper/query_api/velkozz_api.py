@@ -17,6 +17,7 @@ class VelkozzAPI(object):
         self.token_endpoint = f"{self.base_url}/api-token-auth/" 
         self.reddit_endpoint = f"{self.base_url}/social_media_api/reddit"
         self.jobs_endpoint = f"{self.base_url}/social_media_api/jobs"
+        self.youtube_endpoint = f"{self.base_url}/social_media_api/youtube"
         self.finance_endpoint = f"{self.base_url}/finance_api"
         self.news_endpoint = f"{self.base_url}/news_api"
 
@@ -180,7 +181,78 @@ class VelkozzAPI(object):
 
         except Exception as e:
             return f"Error w/ Constructing Dataframe with Error: {e}"
+
+    def get_daily_youtube_channel_stats(self, start_date=None, end_date=None, channel_name=None, channel_id=None):
+        """The method that queries the Velkozz REST API for data about Youtube Channel Daily Statistics.
+
+        The method builds the specific API endpoint for daily youtube channel statistics and makes a POST
+        request to the API. It filters the API query based on the params passed into the method. The JSON
+        that is extracted from the API endpoint is converted to a structured pandas dataframe.
+
+        Args:
+
+            start_date (str|None, optional): The day that will serve as the start of
+                the dataset. 
+
+            end_date (str|None, optional): The day that will serve as the end of the
+                dataset.
+
+            channel_name (str|None, optional): The name of the youtube channel that will
+                be used to fliter the dataset (only data for this specific channel will be queried).
+
+            channel_id (str|None, optional): The google specific ID of the youtube channel that
+                will be used to filter the dataset (only data for this specific channel will be queried).
+            
+        Returns:
+            pd.Dataframe: The dataframe containing all formatted youtube channel datapoints.
+
+        """
+        # Building the specific daily youtube channel endpoint:
+        daily_youtube_channel_endpoint = f"{self.youtube_endpoint}/channel_daily/"
+
+        # Conditionals dealing with the start and end data params:
+        if start_date is None and end_date is None:
+            payload = {}
+
+        # TODO: Replace with new python switches?        
+        else:
+            if end_date is None:
+                payload = {"Start-Date":start_date}
+
+            if start_date is None:
+                payload = {"End-Date":end_date}
+
+            if start_date and end_date is not None:
+                payload = {"Start-Date":start_date,"End-Date":end_date}
+
+        # Filtering based on channel ID specifics:
+        if channel_name is not None:
+            payload["Channel-Name"] = channel_name
+
+        if channel_id is not None:
+            payload["Channel-ID"] = channel_id
+
+        # Making GET request to the velkozz api once the query params have been built:
+        response = requests.get(daily_youtube_channel_endpoint, headers=self.auth_header, params=payload)
         
+        # Extracting the response body from the API request:
+        try:
+            if response.status_code <= 302:
+                raw_json = response.json()
+
+                # JSON -> DataFrame:
+                youtube_channel_df = pd.DataFrame.from_dict(raw_json, orient="columns")
+                youtube_channel_df.set_index("date_extracted", inplace=True)
+                youtube_channel_df.drop(["url"], axis=1, inplace=True)
+
+                return youtube_channel_df
+            
+            else:
+                return (f"Error with Response Object: {response}", response.json)
+
+        except Exception as e:
+            return f"Error w/ Constructing Dataframe with Error: {e}"
+
     # Finance Data Query Methods:
     def get_index_comp_data(self, market_index):
         """Method queries the velkozz api for market index composition.
@@ -374,4 +446,3 @@ class VelkozzAPI(object):
 
         else:
             raise ValueError("No Account auth provided to interact with web api. Check config params") 
-
