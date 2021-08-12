@@ -26,9 +26,13 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
 
     Example:
         test_pipeline = DailyYoutubeChannelStatsPipeline(
-            token="test",
-            VELKOZZ_API_URL="test_url",
-            channel_id="example_id"
+            CHANNEL_ID="UCmEu9Y8nodUV0jvsR9NYLJA",
+            CHANNEL_NAME=" IWDominate",
+            GOOGLE_API_KEY="AIzaSyCkRr8SFAlK2aHjPkBHY3hmISZ3jViRyBM",
+            LOGGER_HOST="test",
+            LOGGER_URL="test",
+            token="97a6e8877fc4131bab181ff41283dd389048c6ef",
+            VELKOZZ_API_URL="http://127.0.0.1:8000"
         )
 
     """
@@ -45,11 +49,18 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         self.google_api_key = kwargs.get("GOOGLE_API_KEY", None)
 
         # Building the Google API service:
-        self.youtube_api_obj = build("youtube", "v3", developerKey=self.google_api_key)
+        try:
+            self.youtube_api_obj = build("youtube", "v3", developerKey=self.google_api_key)
+            self.logger.info(f"Google API service initialized as youtube v3 service: {self.youtube_api_obj}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        
+        except Exception as e:
+            self.logger.error(f"Error with building Google-Youtube-API w/ Error: {e}. Exiting pipeline", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            return
 
         # Building Velkozz Channel Data Endpoint:
         self.youtube_endpoint = f"{self.web_api_url}/social_media_api/youtube/channel_daily/"
 
+        self.logger.info(f"Executing Daily Youtube Channel Stats Pipeline", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
         self.execute_pipeline()
 
     def extract_channel_stats(self):
@@ -63,21 +74,47 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
             Dict: The dict containing the raw response data extracted from the Google-Youtube-API.
 
         """
-        # TODO: Implement list based ingestion for the extract. And add full logging functions.
-
         # Making the response to the Google API:
-        if self.channel_id is not None: # Make request for youtube channel based on ID over channel name.
-            response = self.youtube_api_obj.channels().list(
-                part="statistics",
-                id=self.channel_id)
-        else: # Using the youtube channel name to make query of channel_id is none.
-            response = self.youtube_api_obj.channels().list(
-                part="statistics",
-                forUsername=self.channel_name)
-        
-        response = response.execute()
+        try:
+            if self.channel_id is not None: # Make request for youtube channel based on ID over channel name.
+                
+                #  If the CHANNEL_ID is a lists, iterate through the lists and generate response objects:
+                if isinstance(self.channel_id, list):
+                    for id in self.channel_id:
+                        response = self.youtube_api_obj.channels().list(
+                            part="statistics",
+                            id=self.channel_id)
+                        self.logger.info(f"Built Youtube API response object with Channel ID {self.channel_id}. Response: {response}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
-        yield response
+                        self.logger.info(f"Successfully Created Google-Youtube Channel Response Object: {response}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+
+                        response = response.execute()
+                        self.logger.info(f"Executed response object, querying the Youtube-API",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+
+                        yield response
+                
+                else:
+                    response = self.youtube_api_obj.channels().list(
+                        part="statistics",
+                        id=self.channel_id)
+                    self.logger.info(f"Built Youtube API response object with Channel ID {self.channel_id}. Response: {response}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            
+                    self.logger.info(f"Successfully Created Google-Youtube Channel Response Object: {response}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+                    
+                    response = response.execute()
+                    
+                    self.logger.info(f"Executed response object, querying the Youtube-API",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+
+                    yield response
+
+            else:
+                self.logger.error(f"No CHANNEL_ID found. Exiting the Pipeline w/o making a request to the Google API.",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+                return                
+            
+        except Exception as e:
+            self.logger.warning(f"Unable to build Google-Youtube Response object. Exited w/ Error {e}",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            return
+   
 
     def transform_channel_stats(self, *args):
         """The method recieves the response dict from the extraction method and unpacks the
@@ -99,16 +136,38 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         """
         # Unpacking the response tuple:
         response = args[0]
-        channel_stats = response["items"][0]
+        channel_items = response["items"][0]
+        channel_stats = channel_items["statistics"]
 
-        # Building request payload:
-        payload = [{
-            "channel_id":channel_stats["id"],
-            "channel_name": self.channel_name,
-            "viewCount": channel_stats["statistics"]["viewCount"],
-            "subscriberCount": channel_stats["statistics"]["subscriberCount"],
-            "videoCount": channel_stats["statistics"]["videoCount"]
-        }]
+        # Extracting key variables:
+        self.logger.info(f"Unpacking channel data from response object dict", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        channel_id = channel_items.get("id", None)
+        viewCount = channel_stats.get("viewCount", None)
+        subscriberCount = channel_stats.get("subscriberCount", None)
+        videoCount = channel_stats.get("videoCount")
+
+        # Building Payload Dict if all variables are correctly extracted from response dict:
+        if None not in {channel_id, viewCount, subscriberCount, videoCount}: # Only if all values are not none.
+
+            # Building request payload:
+            self.logger.info(f"Building payload json dict. All data point sucessfully extracted and are not None.",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            payload = [{
+                "channel_id":channel_id,
+                "channel_name": self.channel_name,
+                "viewCount": viewCount,
+                "subscriberCount": subscriberCount,
+                "videoCount": videoCount
+            }]
+        
+        else: # Some of the values are none.
+            self.logger.info(f"Building payload json dict. Not all data points have been found. Some are None. Channel ID: {channel_id}, Channel Name: {self.channel_name}, viewCounts: {viewCount}, subscriberCount: {subscriberCount}, videoCount: {videoCount}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            payload = [{
+                "channel_id":channel_id,
+                "channel_name": self.channel_name,
+                "viewCount": viewCount,
+                "subscriberCount": subscriberCount,
+                "videoCount": videoCount
+            }]
 
         yield payload
 
@@ -119,14 +178,28 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         # Unpacking Channel Payload data:
         channel_data_payload = args[0]
 
+        if len(channel_data_payload) < 1:
+            self.logger.warning(f"Only {len(posts_dict)} data points found. Existing w/o making a POST request to the API", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            return
+        
+        else:
+            self.logger.info(f"Making POST request to the Web API to write daily channel data", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            
         # Making POST request to the API:
-        response = requests.post(
-            self.youtube_endpoint,
-            headers={"Authorization":f"Token {self.token}"},
-            json=channel_data_payload
-        )
+        try:
+            response = requests.post(
+                self.youtube_endpoint,
+                headers={"Authorization":f"Token {self.token}"},
+                json=channel_data_payload)
+        
+            if response.status_code > 300:
+                self.logger.warning(f"POST Request of {len(channel_data_payload)} youtube channel data failed w/ Status Code {response.status_code}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+                
+            else:
+                self.logger.info(f"Made POST request to Youtube Channel Velkozz REST API with Status Code {response.status_code}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
 
-        # TODO: Add Logging and Error Catching.
+        except Exception as e:
+            self.logger.error(f"Error in Making POST Request to the API. Exited w/ Error: {e}", "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
