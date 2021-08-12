@@ -1,6 +1,7 @@
 # Importing external packages:
 import requests
 import bonobo
+import os
 
 # Importing Logging packages:
 import logging
@@ -53,6 +54,10 @@ class Pipeline(object):
 
         self.http_handler.setFormatter(self.formatter)
         self.logger.addHandler(self.http_handler)
+
+        # Extracting additional Pipeline configs:
+        self.token = kwargs.get("token")
+        self.web_api_url = kwargs["VELKOZZ_API_URL"] if "VELKOZZ_API_URL" in kwargs else os.environ['VELKOZZ_API_URL']
 
     # <------Base Bonobo ETL Methods------->
     def extract(self):

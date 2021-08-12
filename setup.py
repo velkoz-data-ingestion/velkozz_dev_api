@@ -14,7 +14,8 @@ setup(
         "praw",
         "requests",
         "beautifulsoup4",
-        "pytz"
+        "pytz",
+        "google-api-python-client"
     ],
     license = 'MIT',
     long_description=open('README.md').read()   

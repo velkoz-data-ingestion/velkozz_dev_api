@@ -56,7 +56,6 @@ class IndeedJobListingsPipeline(Pipeline):
         # Execuring all of the ETL functions mapped in the graph:
         self.execute_pipeline()
 
-
     def recursively_extract_and_transform_listings(self):
         """
         - Inital Indeed URL, built based on search params.
