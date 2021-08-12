@@ -28,10 +28,10 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         test_pipeline = DailyYoutubeChannelStatsPipeline(
             CHANNEL_ID="UCmEu9Y8nodUV0jvsR9NYLJA",
             CHANNEL_NAME=" IWDominate",
-            GOOGLE_API_KEY="AIzaSyCkRr8SFAlK2aHjPkBHY3hmISZ3jViRyBM",
+            GOOGLE_API_KEY="Test api key",
             LOGGER_HOST="test",
             LOGGER_URL="test",
-            token="97a6e8877fc4131bab181ff41283dd389048c6ef",
+            token="test api token",
             VELKOZZ_API_URL="http://127.0.0.1:8000"
         )
 
