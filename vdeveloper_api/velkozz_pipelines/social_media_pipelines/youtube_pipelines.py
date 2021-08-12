@@ -48,7 +48,7 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         self.youtube_api_obj = build("youtube", "v3", developerKey=self.google_api_key)
 
         # Building Velkozz Channel Data Endpoint:
-        self.youtube_endpoint = f"{self.web_api_url}/social_media_api/youtube/channel_daily"
+        self.youtube_endpoint = f"{self.web_api_url}/social_media_api/youtube/channel_daily/"
 
         self.execute_pipeline()
 
@@ -63,6 +63,8 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
             Dict: The dict containing the raw response data extracted from the Google-Youtube-API.
 
         """
+        # TODO: Implement list based ingestion for the extract. And add full logging functions.
+
         # Making the response to the Google API:
         if self.channel_id is not None: # Make request for youtube channel based on ID over channel name.
             response = self.youtube_api_obj.channels().list(
@@ -73,15 +75,58 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
                 part="statistics",
                 forUsername=self.channel_name)
         
-        response.execute()
+        response = response.execute()
 
-        print(response.status)
+        yield response
 
-    def transform_channel_stats(self):
-        pass
-    
-    def load_channel_stats(self):
-        pass
+    def transform_channel_stats(self, *args):
+        """The method recieves the response dict from the extraction method and unpacks the
+        key params from said response dict. 
+
+        It re-builds the dict into a formatted request payload to be sent to the Velkozz REST API.
+        The method constrcuts the following request payload:
+
+        {
+            "channel_id": "specific_channel_id",
+            "channel_name": "Specific Channel name or None",
+            "viewCount": 2124343,
+            "subscriberCount": 3423523,
+            "videoCount": 223
+        }
+
+        Yields:
+            A length one list containing a dictionary as a fully formatted request payload.
+        """
+        # Unpacking the response tuple:
+        response = args[0]
+        channel_stats = response["items"][0]
+
+        # Building request payload:
+        payload = [{
+            "channel_id":channel_stats["id"],
+            "channel_name": self.channel_name,
+            "viewCount": channel_stats["statistics"]["viewCount"],
+            "subscriberCount": channel_stats["statistics"]["subscriberCount"],
+            "videoCount": channel_stats["statistics"]["videoCount"]
+        }]
+
+        yield payload
+
+    def load_channel_stats(self, *args):
+        """The method recieves the built payload dict from the transformation method and
+        writes the youtube chanel data to the Velkozz REST API.
+        """
+        # Unpacking Channel Payload data:
+        channel_data_payload = args[0]
+
+        # Making POST request to the API:
+        response = requests.post(
+            self.youtube_endpoint,
+            headers={"Authorization":f"Token {self.token}"},
+            json=channel_data_payload
+        )
+
+        # TODO: Add Logging and Error Catching.
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
@@ -103,14 +148,6 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
         self.graph.add_chain(
             self.extract_channel_stats,
             self.transform_channel_stats,
-            self.transform_channel_stats)
+            self.load_channel_stats)
     
         return self.graph
-
-
-DailyYoutubeChannelStatsPipeline(
-    CHANNEL_ID="UCnQC_G5Xsjhp9fEJKuIcrSw",
-    VELKOZZ_API_URL="http://127.0.0.1:8000",
-    token="97a6e8877fc4131bab181ff41283dd389048c6ef",
-    GOOGLE_API_KEY="AIzaSyCkRr8SFAlK2aHjPkBHY3hmISZ3jViRyBM"
-    )
