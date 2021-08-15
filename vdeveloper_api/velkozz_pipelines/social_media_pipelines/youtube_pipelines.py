@@ -115,7 +115,6 @@ class DailyYoutubeChannelStatsPipeline(Pipeline):
             self.logger.warning(f"Unable to build Google-Youtube Response object. Exited w/ Error {e}",  "youtube_daily", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
             return
    
-
     def transform_channel_stats(self, *args):
         """The method recieves the response dict from the extraction method and unpacks the
         key params from said response dict. 

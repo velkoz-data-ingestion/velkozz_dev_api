@@ -36,14 +36,15 @@ class WSBTickerFrequencyPipeline(Pipeline):
 
     """
     def __init__(self, **kwargs):
-        self.token = kwargs.get('token')
-        self.url = kwargs.get("url")
+        
+        # Initalizing the parent Pipeline object:
+        super(WSBTickerFrequencyPipeline, self).__init__(**kwargs)
 
         # Creating connection to the REST API:
-        if self.url is None:
+        if self.web_api_url is None:
             self.velkozz_con = VelkozzAPI(token=self.token)
         else:
-            self.velkozz_con = VelkozzAPI(token=self.token, url=self.url)
+            self.velkozz_con = VelkozzAPI(token=self.token, url=self.web_api_url)
         
         self.logger.info("WallStreetBets Ticker Frequency Counts Pipeline Initalized", "reddit_quant", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200) 
         
