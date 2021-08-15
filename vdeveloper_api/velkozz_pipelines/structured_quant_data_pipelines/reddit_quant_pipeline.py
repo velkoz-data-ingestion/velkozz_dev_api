@@ -93,7 +93,7 @@ class WSBTickerFrequencyPipeline(Pipeline):
         try:
             nyse_comp = self.velkozz_con.get_index_comp_data("nyse")
             nasdaq_comp = self.velkozz_con.get_index_comp_data("nasdaq")
-            self.logger.info(f"Queried Market composition data from the REST API. Queried {len(nyse_comp.index)} NYSE, {len(nasdaq_comp)} NASDAQ Stocks", "reddit_quant", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200) 
+            self.logger.info(f"Queried Market composition data from the REST API. Queried {len(nyse_comp.index)} NYSE, {len(nasdaq_comp.index)} NASDAQ Stocks", "reddit_quant", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200) 
 
         except Exception as e:
             self.logger.error(f"Unable to query ticker data from the REST API. Exiting Pipeline w/ Error: {e}","reddit_quant", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400) 
