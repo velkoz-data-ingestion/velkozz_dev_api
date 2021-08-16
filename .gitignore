@@ -28,6 +28,8 @@ share/python-wheels/
 MANIFEST
 src
 src/
+*src
+*src/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
