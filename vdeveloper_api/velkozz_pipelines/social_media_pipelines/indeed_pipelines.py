@@ -70,12 +70,12 @@ class IndeedJobListingsPipeline(Pipeline):
 
         url_req = requests.Request("GET", built_indeed_url, params=payload).prepare()
 
-        self.logger.info(f"Request made to {url_req.url}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        self.logger.info(f"Request made to {url_req.url}", "indeed", "pipeline", 200)
 
         # Using recursive method to extract data via built url:
         job_listings = self._extract_indeed_jobs(url_req.url, 0, self.max_pages)
         
-        self.logger.info(f"Finished Extracting {len(job_listings)} from Indeed.ca from scraping {self.max_pages} Pages" , "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        self.logger.info(f"Finished Extracting {len(job_listings)} from Indeed.ca from scraping {self.max_pages} Pages" , "indeed", "pipeline", 200)
 
         yield job_listings
         
@@ -89,7 +89,7 @@ class IndeedJobListingsPipeline(Pipeline):
         # If the list of posts contains no entries end w/o making POST request:
         if len(job_listings) < 1:
             
-            self.logger.warning(f"No Data Recieved from recursive extraction method. Exiting w/o making POST request.", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.warning(f"No Data Recieved from recursive extraction method. Exiting w/o making POST request.", "indeed", "pipeline", 301)
             return
 
         # Seralizing the lit of dicts to json format:
@@ -99,12 +99,12 @@ class IndeedJobListingsPipeline(Pipeline):
                 headers={"Authorization":f"Token {self.token}"},
                 json=job_listings)
         except Exception as e:
-            self.logger.error(f"Error in Making POST Request to the API. Exited w/ Error: {e}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            self.logger.error(f"Error in Making POST Request to the API. Exited w/ Error: {e}", "indeed", "pipeline", 400)
 
         if response.status_code > 301:
-            self.logger.error(f"POST request to Velkozz Web API failed. Status Code {response.status_code}. Response: {response.text}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            self.logger.error(f"POST request to Velkozz Web API failed. Status Code {response.status_code}. Response: {response.text}", "indeed", "pipeline", 400)
         else:
-            self.logger.info(f"Made POST request to Velkoz Web API <Indeed Jobs Listings: Length {len(job_listings)}> w/ Status Code: {response.status_code}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"Made POST request to Velkoz Web API <Indeed Jobs Listings: Length {len(job_listings)}> w/ Status Code: {response.status_code}", "indeed", "pipeline", 200)
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
@@ -210,21 +210,21 @@ class IndeedJobListingsPipeline(Pipeline):
         try:
             r = requests.get(indeed_url, headers=headers)
         except Exception as e:
-            self.logger.error(f"Error on Making HTTP Request to Indeed.ca w/ Error: {e}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            self.logger.error(f"Error on Making HTTP Request to Indeed.ca w/ Error: {e}", "indeed", "pipeline", 400)
             return
 
         if r.status_code > 301:
-            self.logger.warning(f"Request made to Indeed.ca website returned a status code of {r.status_code} from url: {indeed_url}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.warning(f"Request made to Indeed.ca website returned a status code of {r.status_code} from url: {indeed_url}", "indeed", "pipeline", 301)
         else:
-            self.logger.info(f"Request made to Indeed.ca website returned a status code of {r.status_code} from url: {indeed_url}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.info(f"Request made to Indeed.ca website returned a status code of {r.status_code} from url: {indeed_url}", "indeed", "pipeline", 301)
 
         soup = bs4.BeautifulSoup(r.text, "html.parser")
         listings = soup.find_all("div", {"class":"jobsearch-SerpJobCard"})
 
         if len(listings) > 0:
-            self.logger.info(f"{len(listings)} Listings Found and Extracted from {indeed_url} w/ bs4",  "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"{len(listings)} Listings Found and Extracted from {indeed_url} w/ bs4",  "indeed", "pipeline", 200)
         else:
-            self.logger.warning(f"{len(listings)} Listings Found and Extracted from {indeed_url} w/ bs4",  "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.warning(f"{len(listings)} Listings Found and Extracted from {indeed_url} w/ bs4",  "indeed", "pipeline", 301)
 
         # Extracting the job postings data:
         jobs = [
@@ -241,10 +241,10 @@ class IndeedJobListingsPipeline(Pipeline):
         # Extracting and Building the url to the next indeed webpage:
         try:
             next_page_href = soup.find("a", {"aria-label":"Next"})['href']
-            self.logger.info(f"URL Link for the next Indeed Page extracted",  "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"URL Link for the next Indeed Page extracted",  "indeed", "pipeline", 200)
 
         except Exception as e:
-            self.logger.error(f"URL Link for the Next Indeed page not found. Being set as None w/ Error {e}",  "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            self.logger.error(f"URL Link for the Next Indeed page not found. Being set as None w/ Error {e}",  "indeed", "pipeline", 400)
             next_page_href = None
 
         next_link_page = f"https://ca.indeed.com{next_page_href}"
@@ -272,7 +272,7 @@ class IndeedJobListingsPipeline(Pipeline):
         """
         if page_num > max_pages:
             # Print debug messages abount function execution:
-            self.logger.info(f"Recursive Web Scraping Exit Case, Returning {len(job_listings)} after scraping {page_num} pages", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"Recursive Web Scraping Exit Case, Returning {len(job_listings)} after scraping {page_num} pages", "indeed", "pipeline", 200)
             return job_listings
         
         else:            
@@ -282,11 +282,11 @@ class IndeedJobListingsPipeline(Pipeline):
             # Adding job listings data to the list:
             job_listings.extend(indeed_data[0])
             
-            self.logger.info(f"Recursivley Web Scraping Indeed Page # {page_num}, extracted {len(indeed_data)} listings", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"Recursivley Web Scraping Indeed Page # {page_num}, extracted {len(indeed_data)} listings", "indeed", "pipeline", 200)
 
             # Second Exit Condition if no next url is found:
             if indeed_data[1] is None: 
-                self.logger.info(f"No href link to next indeed page found, exit case reached. Returning {len(job_listings)}", "indeed", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+                self.logger.info(f"No href link to next indeed page found, exit case reached. Returning {len(job_listings)}", "indeed", "pipeline", 301)
                 return job_listings
 
             # Waiting time to avoid throttling:

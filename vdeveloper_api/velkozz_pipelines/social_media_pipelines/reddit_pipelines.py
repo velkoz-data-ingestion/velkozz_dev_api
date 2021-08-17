@@ -70,7 +70,7 @@ class RedditContentPipeline(Pipeline):
 
         self.subreddit = self.reddit.subreddit(self.subreddit_name)
 
-        self.logger.info(f"Reddit Instance Initalized with Read Status: {self.reddit.read_only}", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        self.logger.info(f"Reddit Instance Initalized with Read Status: {self.reddit.read_only}", "reddit", "pipeline", 200)
 
         # Execuring all of the ETL functions mapped in the graph:
         self.execute_pipeline()
@@ -117,7 +117,7 @@ class RedditContentPipeline(Pipeline):
 
             posts_dict[post.id] = post_content_dict
         
-        self.logger.info(f"Extracted Daily top {len(post_content_dict)} posts from {self.subreddit}", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        self.logger.info(f"Extracted Daily top {len(post_content_dict)} posts from {self.subreddit}", "reddit", "pipeline", 200)
                 
         yield posts_dict
 
@@ -187,7 +187,7 @@ class RedditContentPipeline(Pipeline):
             self._transform_post_content_lst(post_id, content_lst) for post_id, content_lst in
             posts_dict.items()]
 
-        self.logger.info(f"Raw Post Data Transformed. Formatted posts ({len(unique_posts)}) data being passed to Loading method", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+        self.logger.info(f"Raw Post Data Transformed. Formatted posts ({len(unique_posts)}) data being passed to Loading method", "reddit", "pipeline", 200)
         yield unique_posts
 
     def load_posts(self, *args):
@@ -215,11 +215,11 @@ class RedditContentPipeline(Pipeline):
 
         # If the list of posts contains no entries end w/o making POST request:
         if len(posts_dict) < 1:
-            self.logger.warning(f"Only {len(posts_dict)} posts found. Existing w/o making a POST request to the API", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.warning(f"Only {len(posts_dict)} posts found. Existing w/o making a POST request to the API", "reddit", "pipeline", 301)
             return
         
         else:
-            self.logger.info(f"Making POST request to the Web API to write {len(posts_dict)} posts", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"Making POST request to the Web API to write {len(posts_dict)} posts", "reddit", "pipeline", 200)
 
         # Building the API endpoint for the specific subreddit:
         subreddit_endpoint = f"{self.query_con.reddit_endpoint}/r{self.subreddit_name}/"
@@ -232,13 +232,13 @@ class RedditContentPipeline(Pipeline):
                 json=posts_dict)
 
             if response.status_code > 300:
-                self.logger.warning(f"POST Request of {len(posts_dict)} reddit posts failed w/ Status Code {response.status_code}", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+                self.logger.warning(f"POST Request of {len(posts_dict)} reddit posts failed w/ Status Code {response.status_code}", "reddit", "pipeline", 301)
                 
             else:
-                self.logger.info(f"Made POST request to Velkozz REST API {subreddit_endpoint} with Status Code {response.status_code}", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+                self.logger.info(f"Made POST request to Velkozz REST API {subreddit_endpoint} with Status Code {response.status_code}", "reddit", "pipeline", 200)
 
         except Exception as e:
-            self.logger.error(f"Error in Making POST Request to the API. Exited w/ Error: {e}", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 400)
+            self.logger.error(f"Error in Making POST Request to the API. Exited w/ Error: {e}", "reddit", "pipeline", 400)
 
     def build_graph(self, **options):
         """The method that is used to construct a Bonobo ETL pipeline
@@ -308,7 +308,7 @@ class RedditContentPipeline(Pipeline):
                 "author": post_dict["author"].name
             }
 
-            self.logger.info(f"Author Data Extracted Sucessfully from Post Dict", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 200)
+            self.logger.info(f"Author Data Extracted Sucessfully from Post Dict", "reddit", "pipeline", 200)
 
         except Exception as e:
             # Post dict autor dicts:
@@ -321,7 +321,7 @@ class RedditContentPipeline(Pipeline):
                 "comment_karma": None,
                 "author": None
             }
-            self.logger.warning(f"Author Dictionary Data Extraction Failed w/ Error: {e} author_dict set to None", "reddit", "pipeline", datetime.now().strftime("%d-%b-%Y (%H:%M:%S.%f)"), 301)
+            self.logger.warning(f"Author Dictionary Data Extraction Failed w/ Error: {e} author_dict set to None", "reddit", "pipeline", 301)
 
 
         # Updating the main post_dict with the new author_dict content:
