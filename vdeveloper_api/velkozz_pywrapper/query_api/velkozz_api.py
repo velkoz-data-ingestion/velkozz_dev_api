@@ -57,36 +57,29 @@ class VelkozzAPI(object):
 
         """
         # Building subreddit enpoint:
-        subreddit_endpoint = f"{self.reddit_endpoint}/r{subreddit_name}"
+        reddit_top_posts_endpoint = f"{self.reddit_endpoint}/top_posts"
 
         # Making request to API:
+        params = {}
+        
         # Conditionals dealing with the start and end data params:
-        if start_date is None and end_date is None:
-            response = requests.get(subreddit_endpoint, headers=self.auth_header)
-        
-        #TODO: This is Horrific, fix this please. Add a switch like stop these conditionals oh god:
-        else:
-            if end_date is None:
-                response = requests.get(
-                    subreddit_endpoint, 
-                    headers=self.auth_header,
-                    params={"Start-Date":start_date}
-                )
+        if start_date is not None:
+            params["Start-Date"] = start_date
 
-            if start_date is None:
-                response = requests.get(
-                    subreddit_endpoint, 
-                    headers=self.auth_header,
-                    params={"End-Date":end_date}
-                )
+        if end_date is not None:
+            params["End-Date"] = end_date
 
-            if start_date and end_date is not None:
-                response = requests.get(
-                    subreddit_endpoint, 
-                    headers=self.auth_header,
-                    params={"Start-Date":start_date,"End-Date":end_date}
-                )
-        
+        # Conditionals filtering query based on subreddit:
+        if subreddit_name is not None:
+            params["Subreddit"] = subreddit_name
+
+        # Making the query to the API:
+        response = requests.get(
+            reddit_top_posts_endpoint,
+            headers=self.auth_header,
+            params=params
+        )
+
         # Converting the json response to formatted dataframe:
         try:
             if response.status_code <= 302:
