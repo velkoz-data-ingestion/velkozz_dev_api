@@ -89,10 +89,10 @@ class RedditContentPipeline(Pipeline):
             A dictionary containing all the relevant information for each reddit post
                 necessary to compile a dataframe:
                 {
-                    id1: {title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
-                    id2: {title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
+                    id1: {subreddit, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
+                    id2: {subreddit, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
                                                 ...
-                    idn: {title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink ,author},
+                    idn: {subreddit, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink ,author},
                 }
         """
         posts_dict = {}
@@ -102,6 +102,7 @@ class RedditContentPipeline(Pipeline):
 
             # Building the single dict key-value pair:
             post_content_dict = {
+                "subreddit": self.subreddit.display_name,
                 "title": post.title,
                 "content":post.selftext,
                 "upvote_ratio":post.upvote_ratio,
@@ -127,8 +128,8 @@ class RedditContentPipeline(Pipeline):
         unqiue post dictionaries in the format:
         
         [
-             {id1, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
-             {idn,title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author}
+             {id1, subreddit, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author},
+             {idn, subreddit, title, content, upvote_ratio, score, num_comments, created_on, stickied, over_18, spoiler, permalink, author}
         ]
                     
         The transformation method queries the main web api for existing posts posted on the day that the pipeline
@@ -148,7 +149,6 @@ class RedditContentPipeline(Pipeline):
         # Unpacking Args Tuple:
         posts_dict = args[0]
         
-
         # Remove for next version:
         """
         # Querying existing posts from the database during current day:
@@ -212,7 +212,7 @@ class RedditContentPipeline(Pipeline):
         
         """
         posts_dict = args[0]
-
+        
         # If the list of posts contains no entries end w/o making POST request:
         if len(posts_dict) < 1:
             self.logger.warning(f"Only {len(posts_dict)} posts found. Existing w/o making a POST request to the API", "reddit", "pipeline", 301)
@@ -222,7 +222,7 @@ class RedditContentPipeline(Pipeline):
             self.logger.info(f"Making POST request to the Web API to write {len(posts_dict)} posts", "reddit", "pipeline", 200)
 
         # Building the API endpoint for the specific subreddit:
-        subreddit_endpoint = f"{self.query_con.reddit_endpoint}/r{self.subreddit_name}/"
+        subreddit_endpoint = f"{self.query_con.reddit_endpoint}/top_posts/"
 
         # Making the post Request:
         try:
